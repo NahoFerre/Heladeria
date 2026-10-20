@@ -1,0 +1,106 @@
+<div class="gastos-layout">
+  <h1>Gastos</h1>
+
+  <div class="card nuevo-gasto">
+    <h2>Nuevo gasto</h2>
+
+    <div class="fila-2">
+      <label>
+        Categoría (opcional)
+        <input type="text" list="categorias-sugeridas" [ngModel]="categoria()" (ngModelChange)="categoria.set($event)" />
+        <datalist id="categorias-sugeridas">
+          @for (cat of categoriasSugeridas; track cat) {
+            <option [value]="cat"></option>
+          }
+        </datalist>
+      </label>
+      <label>
+        Método de pago (opcional)
+        <input type="text" [ngModel]="metodoPago()" (ngModelChange)="metodoPago.set($event)" placeholder="Ej: Efectivo, transferencia" />
+      </label>
+    </div>
+
+    <label>
+      Descripción
+      <input type="text" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" placeholder="Ej: Detergente y lavandina" />
+    </label>
+
+    <div class="fila-2">
+      <label>
+        Monto
+        <app-monto-input [value]="monto()" (valueChange)="monto.set($event)" />
+      </label>
+      <label>
+        Observación (opcional)
+        <input type="text" [ngModel]="observacion()" (ngModelChange)="observacion.set($event)" />
+      </label>
+    </div>
+
+    <button type="button" (click)="registrarGasto()" [disabled]="procesando()">
+      {{ procesando() ? 'Registrando...' : 'Registrar gasto' }}
+    </button>
+  </div>
+
+  @if (gastos().length > 0) {
+    <div class="card resumen">
+      <h2>Resumen</h2>
+      <div class="metric-total">
+        <span class="label">Total gastado</span>
+        <strong>{{ totalGastado() | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+
+      <h3>Por categoría</h3>
+      <table>
+        <tbody>
+          @for (fila of porCategoria(); track fila.nombre) {
+            <tr>
+              <td>{{ fila.nombre }}</td>
+              <td>{{ fila.monto | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <div class="card historial">
+    <h2>Historial de gastos</h2>
+    @if (cargando()) {
+      <app-spinner />
+    } @else {
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Categoría</th>
+              <th>Descripción</th>
+              <th>Monto</th>
+              <th>Método de pago</th>
+              <th>Usuario</th>
+              <th>Observación</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (gasto of gastosPagina(); track gasto.id) {
+              <tr>
+                <td>{{ gasto.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                <td>{{ gasto.categoria || '—' }}</td>
+                <td>{{ gasto.descripcion }}</td>
+                <td>{{ gasto.monto | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ gasto.metodoPago || '—' }}</td>
+                <td>{{ gasto.usuarioNombreMomento }}</td>
+                <td>{{ gasto.observacion || '—' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="vacio"><app-icon name="credit-card" [size]="18" /> Todavía no hay gastos registrados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    }
+  </div>
+</div>

@@ -1,0 +1,73 @@
+.usuarios-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .chico {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .vacio {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.rol {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  background: #eef1fb;
+  color: #3d4fbf;
+
+  &.admin {
+    background: #fbe4e1;
+    color: var(--color-danger);
+  }
+}
+
+.panel {
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+}

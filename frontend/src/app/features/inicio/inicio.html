@@ -1,0 +1,235 @@
+<div class="inicio">
+  <div class="saludo">
+    <h1>Hola, {{ usuario?.username }}</h1>
+    <p>{{ hoy | date: 'EEEE d \'de\' MMMM' }}</p>
+  </div>
+
+  @if (cargando()) {
+    <app-spinner />
+  } @else {
+    <div class="resumen">
+      <div class="card metric">
+        <span class="label">Ventas de hoy</span>
+        <strong>{{ resumen()?.ventasHoy ?? 0 }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Total vendido hoy</span>
+        <strong>{{ (resumen()?.totalVendidoHoy ?? 0) | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      @if (esAdmin) {
+        <div class="card metric ganancia">
+          <span class="label">Ganancia de hoy</span>
+          <strong>{{ (gananciaHoy() ?? 0) | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+      }
+      <div class="card metric" [class.alerta]="(resumen()?.productosStockBajo ?? 0) > 0">
+        <span class="label">Stock bajo</span>
+        <strong>{{ resumen()?.productosStockBajo ?? 0 }}</strong>
+      </div>
+      <a routerLink="/caja" class="card metric estado-caja" [class.alerta]="!cajaActual()">
+        <span class="label">Caja</span>
+        <strong>
+          @if (cajaActual()) {
+            <app-icon name="check-circle" [size]="16" /> Abierta
+          } @else {
+            <app-icon name="alert-triangle" [size]="16" /> Cerrada
+          }
+        </strong>
+      </a>
+    </div>
+  }
+
+  @if (stockBajo().length > 0) {
+    <div class="card alerta-stock">
+      <h2><app-icon name="alert-triangle" [size]="18" /> Productos con stock bajo</h2>
+      <ul>
+        @for (producto of stockBajo(); track producto.id) {
+          <li>{{ producto.nombre }} — quedan {{ producto.stockActual }} {{ producto.unidadMedida }} (mínimo {{ producto.stockMinimo }})</li>
+        }
+      </ul>
+    </div>
+  }
+
+  @if (esAdmin) {
+    <div class="dashboard-avanzado">
+      <h2>Dashboard avanzado</h2>
+
+      @if (cargandoDashboard()) {
+        <app-spinner />
+      } @else if (dashboard(); as d) {
+        <section class="seccion">
+          <h3>Ventas</h3>
+          <div class="resumen">
+            <div class="card metric">
+              <span class="label">Hoy</span>
+              <strong>{{ d.ventas.hoy.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+              <span class="sub">{{ d.ventas.hoy.cantidadVentas }} ventas</span>
+              @if (d.ventas.hoy.variacionPorcentaje !== null) {
+                <span class="variacion" [class.negativa]="d.ventas.hoy.variacionPorcentaje < 0">
+                  <app-icon [name]="d.ventas.hoy.variacionPorcentaje >= 0 ? 'trending-up' : 'trending-down'" [size]="14" />
+                  {{ d.ventas.hoy.variacionPorcentaje }}% vs. ayer
+                </span>
+              }
+            </div>
+            <div class="card metric">
+              <span class="label">Esta semana</span>
+              <strong>{{ d.ventas.semana.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+              <span class="sub">{{ d.ventas.semana.cantidadVentas }} ventas</span>
+              @if (d.ventas.semana.variacionPorcentaje !== null) {
+                <span class="variacion" [class.negativa]="d.ventas.semana.variacionPorcentaje < 0">
+                  <app-icon [name]="d.ventas.semana.variacionPorcentaje >= 0 ? 'trending-up' : 'trending-down'" [size]="14" />
+                  {{ d.ventas.semana.variacionPorcentaje }}% vs. semana anterior
+                </span>
+              }
+            </div>
+            <div class="card metric">
+              <span class="label">Este mes</span>
+              <strong>{{ d.ventas.mes.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+              <span class="sub">{{ d.ventas.mes.cantidadVentas }} ventas</span>
+              @if (d.ventas.mes.variacionPorcentaje !== null) {
+                <span class="variacion" [class.negativa]="d.ventas.mes.variacionPorcentaje < 0">
+                  <app-icon [name]="d.ventas.mes.variacionPorcentaje >= 0 ? 'trending-up' : 'trending-down'" [size]="14" />
+                  {{ d.ventas.mes.variacionPorcentaje }}% vs. mes anterior
+                </span>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="seccion">
+          <h3>Productos destacados del mes</h3>
+          <div class="resumen">
+            <div class="card metric">
+              <span class="label"><app-icon name="trending-up" [size]="14" /> Más vendido</span>
+              @if (d.productos.masVendido; as p) {
+                <strong>{{ p.nombre }}</strong>
+                <span class="sub">{{ p.cantidadVendida }} unidades</span>
+              } @else {
+                <strong>—</strong>
+              }
+            </div>
+            <div class="card metric">
+              <span class="label"><app-icon name="bar-chart" [size]="14" /> Mayor ganancia</span>
+              @if (d.productos.mayorGanancia; as p) {
+                <strong>{{ p.nombre }}</strong>
+                <span class="sub">{{ p.ganancia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</span>
+              } @else {
+                <strong>—</strong>
+              }
+            </div>
+            <div class="card metric">
+              <span class="label"><app-icon name="layers" [size]="14" /> Mayor margen</span>
+              @if (d.productos.mayorMargen; as p) {
+                <strong>{{ p.nombre }}</strong>
+                <span class="sub">{{ p.ingresos > 0 ? ((p.ganancia / p.ingresos) * 100 | number: '1.0-0') : 0 }}% margen</span>
+              } @else {
+                <strong>—</strong>
+              }
+            </div>
+            <div class="card metric">
+              <span class="label"><app-icon name="trending-down" [size]="14" /> Menor rotación</span>
+              @if (d.productos.menorRotacion; as p) {
+                <strong>{{ p.nombre }}</strong>
+                <span class="sub">{{ p.cantidadVendida }} unidades</span>
+              } @else {
+                <strong>—</strong>
+              }
+            </div>
+          </div>
+        </section>
+
+        <section class="seccion">
+          <h3>Caja</h3>
+          @if (d.cajaActual; as c) {
+            <div class="resumen">
+              <div class="card metric">
+                <span class="label">Efectivo esperado ahora</span>
+                <strong>{{ c.efectivoEsperadoParcial | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+              </div>
+              @for (t of c.totalesPorMetodoPago; track t.metodoPago) {
+                <div class="card metric">
+                  <span class="label">Ventas en {{ t.metodoPago | lowercase }}</span>
+                  <strong>{{ t.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+                  <span class="sub">{{ t.cantidadVentas }} ventas</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="vacio"><app-icon name="alert-triangle" [size]="16" /> No hay una caja abierta.</p>
+          }
+        </section>
+
+        <section class="seccion">
+          <h3>Inventario</h3>
+          <div class="listas-inventario">
+            <div class="card lista">
+              <h4><app-icon name="alert-triangle" [size]="16" /> Stock bajo — productos</h4>
+              @if (d.inventario.stockBajoProductos.length > 0) {
+                <ul>
+                  @for (item of d.inventario.stockBajoProductos; track item.id) {
+                    <li>{{ item.nombre }} — quedan {{ item.stockActual }} {{ formatearUnidadMedida(item.unidadMedida) }} (mín. {{ item.stockMinimo }})</li>
+                  }
+                </ul>
+              } @else {
+                <p class="vacio">Sin alertas.</p>
+              }
+            </div>
+            <div class="card lista">
+              <h4><app-icon name="alert-triangle" [size]="16" /> Stock bajo — insumos</h4>
+              @if (d.inventario.stockBajoInsumos.length > 0) {
+                <ul>
+                  @for (item of d.inventario.stockBajoInsumos; track item.id) {
+                    <li>{{ item.nombre }} — quedan {{ item.stockActual }} {{ formatearUnidadMedida(item.unidadMedida) }} (mín. {{ item.stockMinimo }})</li>
+                  }
+                </ul>
+              } @else {
+                <p class="vacio">Sin alertas.</p>
+              }
+            </div>
+            <div class="card lista">
+              <h4><app-icon name="archive" [size]="16" /> Sin ventas en 30 días</h4>
+              @if (d.inventario.productosSinMovimiento.length > 0) {
+                <ul>
+                  @for (item of d.inventario.productosSinMovimiento; track item.id) {
+                    <li>{{ item.nombre }} @if (item.categoria) { <span class="categoria">({{ item.categoria }})</span> }</li>
+                  }
+                </ul>
+              } @else {
+                <p class="vacio">Todos los productos activos tuvieron ventas.</p>
+              }
+            </div>
+          </div>
+        </section>
+      }
+    </div>
+  }
+
+  <div class="accesos">
+    <a routerLink="/venta" class="card acceso">
+      <span class="icono"><app-icon name="cart" [size]="28" /></span>
+      <span>Registrar venta</span>
+    </a>
+    <a routerLink="/caja" class="card acceso">
+      <span class="icono"><app-icon name="wallet" [size]="28" /></span>
+      <span>Caja</span>
+    </a>
+    <a routerLink="/registro-ventas" class="card acceso">
+      <span class="icono"><app-icon name="file-text" [size]="28" /></span>
+      <span>Registro de ventas</span>
+    </a>
+    @if (esAdmin) {
+      <a routerLink="/inventario" class="card acceso">
+        <span class="icono"><app-icon name="box" [size]="28" /></span>
+        <span>Inventario</span>
+      </a>
+      <a routerLink="/dashboard" class="card acceso">
+        <span class="icono"><app-icon name="trending-up" [size]="28" /></span>
+        <span>Ganancias</span>
+      </a>
+      <a routerLink="/usuarios" class="card acceso">
+        <span class="icono"><app-icon name="users" [size]="28" /></span>
+        <span>Usuarios</span>
+      </a>
+    }
+  </div>
+</div>

@@ -1,0 +1,109 @@
+.mermas-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.agregar-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto 1fr;
+  gap: 0.75rem;
+  align-items: end;
+
+  .elemento select {
+    min-width: 180px;
+  }
+
+  .cantidad {
+    width: 120px;
+  }
+}
+
+.metric-total {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  .label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  strong {
+    font-size: 1.4rem;
+    color: var(--color-danger);
+  }
+}
+
+.desgloses {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.desglose table {
+  width: 100%;
+
+  td {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid var(--color-border);
+
+    &:last-child {
+      text-align: right;
+    }
+  }
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+td.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}

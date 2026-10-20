@@ -1,0 +1,1 @@
+var i={UNIDAD:`Unidad`,GRAMO:`Gramo`,KILOGRAMO:`Kilogramo`,MILILITRO:`Mililitro`,LITRO:`Litro`};function t(r){return i[r]??r}export{t};

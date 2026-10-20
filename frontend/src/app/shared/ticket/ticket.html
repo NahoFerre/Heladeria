@@ -1,0 +1,109 @@
+<div class="overlay" (click)="cerrar.emit()">
+  <div class="card ticket" (click)="$event.stopPropagation()">
+    <div class="ticket-imprimible">
+      <header>
+        <img src="/logo.png" alt="Heladería" />
+        <h1>Heladería &amp; Açaí</h1>
+        <p class="numero">Ticket #{{ venta().id }}</p>
+        <p class="fecha">{{ venta().fecha | date: 'dd/MM/yyyy HH:mm' }}</p>
+      </header>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cant.</th>
+            <th>P. unit.</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of venta().items; track item.id) {
+            <tr>
+              <td>
+                {{ item.producto.nombre
+                }}{{ item.varianteNombreMomento ? ' — ' + item.varianteNombreMomento : '' }}
+                @if (item.adicionales.length > 0) {
+                  <br /><span class="adicionales-ticket">+ {{ nombresAdicionales(item) }}</span>
+                }
+                @if (item.promocionNombreMomento) {
+                  <br /><span class="adicionales-ticket"
+                    >Promo: {{ item.promocionNombreMomento }}</span
+                  >
+                }
+              </td>
+              <td>{{ item.cantidad }}</td>
+              <td>{{ precioUnitario(item) | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              <td>{{ subtotal(item) | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="total">
+        <span>Total</span>
+        <strong>{{ venta().total | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+
+      <p class="detalle">Método de pago: {{ formatearMetodoPago(venta().metodoPago) }}</p>
+      @if (venta().usuario) {
+        <p class="detalle">Vendedor: {{ venta().usuario!.username }}</p>
+      }
+
+      <p class="pie">¡Gracias por su compra!</p>
+    </div>
+
+    <div class="acciones">
+      <button type="button" (click)="imprimir()">Imprimir</button>
+      <button type="button" class="secondary" (click)="cerrar.emit()">Cerrar</button>
+      <button
+        type="button"
+        class="config-impresora"
+        title="Configurar impresora térmica"
+        (click)="abrirConfigImpresora()"
+      >
+        <app-icon name="settings" [size]="18" />
+      </button>
+    </div>
+
+    @if (mostrarConfigImpresora()) {
+      <div class="panel-impresora">
+        <p class="titulo">Impresora térmica (QZ Tray)</p>
+        @if (impresoraConfigurada()) {
+          <p class="actual">
+            Configurada: <strong>{{ impresoraConfigurada() }}</strong>
+          </p>
+        } @else {
+          <p class="actual">Sin configurar — se usa el diálogo de impresión normal.</p>
+        }
+
+        @if (cargandoImpresoras()) {
+          <app-spinner />
+        } @else if (impresorasDisponibles().length > 0) {
+          <ul class="lista-impresoras">
+            @for (nombre of impresorasDisponibles(); track nombre) {
+              <li>
+                <button type="button" (click)="seleccionarImpresora(nombre)">{{ nombre }}</button>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="sin-impresoras">
+            No se encontraron impresoras. Verificá que QZ Tray esté instalado y abierto.
+          </p>
+        }
+
+        <div class="panel-acciones">
+          @if (impresoraConfigurada()) {
+            <button type="button" class="secondary" (click)="quitarImpresora()">
+              Quitar configuración
+            </button>
+          }
+          <button type="button" class="secondary" (click)="mostrarConfigImpresora.set(false)">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>

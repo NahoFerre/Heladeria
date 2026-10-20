@@ -1,0 +1,1 @@
+import{W as SP,at,dt as g,mt as lg}from"./main-QIJH6CFO.js";var a=class e{http=g(lg);listar(){return this.http.get(`${SP}/usuarios`)}crear(r){return this.http.post(`${SP}/usuarios`,r)}eliminar(r){return this.http.delete(`${SP}/usuarios/${r}`)}static ɵfac=function(u){return new(u||e)};static ɵprov=at({token:e,factory:e.ɵfac})};export{a as t};

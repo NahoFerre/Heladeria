@@ -1,0 +1,213 @@
+@if (!cajaAbierta()) {
+  <div class="card alerta-caja">
+    <app-icon name="alert-triangle" [size]="18" /> No hay una caja abierta. <a routerLink="/caja">Abrí la caja</a> antes de registrar ventas.
+  </div>
+}
+
+<div class="venta-layout">
+  <section class="productos">
+    <div class="toolbar">
+      <input
+        type="text"
+        placeholder="Buscar por nombre..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event); onFiltroCambiado()"
+      />
+      <select [ngModel]="categoriaFiltro()" (ngModelChange)="categoriaFiltro.set($event); onFiltroCambiado()">
+        <option value="">Todas las categorías</option>
+        @for (categoria of categorias(); track categoria) {
+          <option [value]="categoria">{{ categoria }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th (click)="ordenarPor('nombre')" class="ordenable">
+              Nombre @if (columnaOrden() === 'nombre') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+            </th>
+            <th (click)="ordenarPor('categoria')" class="ordenable">
+              Categoría @if (columnaOrden() === 'categoria') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+            </th>
+            <th (click)="ordenarPor('precioVenta')" class="ordenable">
+              Precio @if (columnaOrden() === 'precioVenta') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+            </th>
+            <th (click)="ordenarPor('stockActual')" class="ordenable">
+              Stock @if (columnaOrden() === 'stockActual') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+            </th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (producto of productosPagina(); track producto.id) {
+            <tr [class.sin-stock]="producto.stockActual <= 0">
+              <td>{{ producto.nombre }}</td>
+              <td>{{ producto.categoria }}</td>
+              <td>{{ producto.precioVenta | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              <td>{{ producto.stockActual }} {{ producto.unidadMedida }}</td>
+              <td>
+                <button
+                  type="button"
+                  [disabled]="producto.stockActual <= 0 && !producto.variantes?.length"
+                  (click)="abrirModalAgregar(producto)"
+                >
+                  Agregar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="vacio"><app-icon name="inbox" [size]="18" /> No se encontraron productos.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+  </section>
+
+  <aside class="carrito card">
+    <h2>Carrito</h2>
+
+    @if (itemsCarrito().length === 0) {
+      <p class="vacio">Elegí un producto de la tabla para agregarlo</p>
+    } @else {
+      <ul class="items">
+        @for (item of itemsCarrito(); track item.lineId) {
+          <li>
+            <span class="detalle-item">
+              <span class="nombre">{{ item.producto.nombre }}{{ item.variante ? ' — ' + item.variante.nombre : '' }}</span>
+              @if (item.adicionales.length > 0) {
+                <span class="adicionales-linea">+ {{ nombresAdicionales(item) }}</span>
+              }
+              @if (promocionAplicada(item); as promo) {
+                <span class="promo-linea"><app-icon name="trending-down" [size]="13" /> {{ promo.nombre }}</span>
+              }
+            </span>
+            <span class="controles">
+              <button type="button" class="secondary chico" (click)="quitar(item.lineId)">−</button>
+              <span>{{ item.cantidad }}</span>
+              <button type="button" class="secondary chico" (click)="sumarUno(item.lineId)">+</button>
+            </span>
+            <span class="subtotal">{{ precioUnitario(item) * item.cantidad | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</span>
+          </li>
+        }
+      </ul>
+
+      <label>
+        Método de pago
+        <select [(ngModel)]="metodoPago">
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="TARJETA">Tarjeta</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+          <option value="QR">QR</option>
+        </select>
+      </label>
+
+      <div class="total">
+        <span>Total</span>
+        <strong>{{ total() | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+
+      @if (metodoPago() === 'EFECTIVO') {
+        <label>
+          Monto recibido
+          <app-monto-input [value]="montoRecibido()" (valueChange)="montoRecibido.set($event)" />
+        </label>
+        <div class="total vuelto" [class.alerta]="vuelto() < 0">
+          <span>Vuelto</span>
+          <strong>{{ vuelto() | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+      }
+
+      <button type="button" (click)="confirmarVenta()" [disabled]="procesando() || !cajaAbierta()">
+        {{ procesando() ? 'Procesando...' : 'Confirmar venta' }}
+      </button>
+      <button type="button" class="secondary" (click)="vaciarCarrito()" [disabled]="procesando()">Vaciar</button>
+    }
+
+    @if (ultimaVenta(); as venta) {
+      <button type="button" class="secondary" (click)="mostrarTicket.set(true)">Ver ticket #{{ venta.id }}</button>
+    }
+  </aside>
+</div>
+
+@if (mostrarTicket() && ultimaVenta(); as venta) {
+  <app-ticket [venta]="venta" (cerrar)="cerrarTicket()" />
+}
+
+@if (productoModal(); as producto) {
+  <div class="overlay" (click)="cerrarModalAgregar()">
+    <div class="card modal" (click)="$event.stopPropagation()">
+      <h2>{{ producto.nombre }}</h2>
+
+      @if (!producto.variantes?.length) {
+        <p class="detalle">
+          {{ producto.precioVenta | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }} — Stock disponible: {{ producto.stockActual }} {{ producto.unidadMedida }}
+        </p>
+      }
+
+      @if (producto.variantes?.length) {
+        <div class="grupo-seleccion">
+          <span class="titulo-grupo">Elegí una opción</span>
+          @for (variante of producto.variantes; track variante.id) {
+            @if (variante.activo) {
+              <label class="opcion-radio">
+                <input
+                  type="radio"
+                  name="variante"
+                  [checked]="varianteModalId() === variante.id"
+                  (change)="elegirVarianteModal(variante.id!)"
+                />
+                <span>{{ variante.nombre }}</span>
+                <span class="precio-opcion">{{ variante.precio | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</span>
+              </label>
+            }
+          }
+        </div>
+      }
+
+      @for (grupo of gruposModal(); track grupo.id) {
+        <div class="grupo-seleccion">
+          <span class="titulo-grupo">
+            {{ grupo.nombre }}
+            @if (grupo.minSeleccion > 0) {
+              (obligatorio, hasta {{ grupo.maxSeleccion }})
+            } @else {
+              (opcional, hasta {{ grupo.maxSeleccion }})
+            }
+          </span>
+          @for (opcion of grupo.opciones; track opcion.id) {
+            @if (opcion.activo) {
+              <label class="opcion-check">
+                <input type="checkbox" [checked]="adicionalesModalIds().has(opcion.id!)" (change)="toggleAdicionalModal(grupo, opcion)" />
+                <span>{{ opcion.nombre }}</span>
+                <span class="precio-opcion">+{{ opcion.precioAdicional | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</span>
+              </label>
+            }
+          }
+        </div>
+      }
+
+      <label>
+        Cantidad
+        <input type="number" min="1" [attr.max]="stockDisponibleModal()" step="1" [(ngModel)]="cantidadModal" />
+      </label>
+
+      @if (promocionModal(); as promo) {
+        <p class="promo-modal"><app-icon name="trending-down" [size]="14" /> Promo aplicada: {{ promo.nombre }}</p>
+      }
+      <p class="subtotal-modal">
+        Subtotal: <strong>{{ subtotalModal() | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </p>
+
+      <div class="botones">
+        <button type="button" [disabled]="!modalValido()" (click)="confirmarAgregarDesdeModal()">Agregar al carrito</button>
+        <button type="button" class="secondary" (click)="cerrarModalAgregar()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

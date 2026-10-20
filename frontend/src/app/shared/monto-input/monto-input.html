@@ -1,0 +1,10 @@
+<input
+  #inputEl
+  type="text"
+  inputmode="numeric"
+  [value]="texto()"
+  [placeholder]="placeholder()"
+  (focus)="onFocus()"
+  (input)="onInput($event)"
+  (blur)="onBlur()"
+/>

@@ -1,0 +1,200 @@
+<div class="dashboard">
+  <form class="filtros card" (ngSubmit)="cargar()">
+    <label>
+      Desde
+      <input name="desde" type="date" [(ngModel)]="desde" />
+    </label>
+    <label>
+      Hasta
+      <input name="hasta" type="date" [(ngModel)]="hasta" />
+    </label>
+    <button type="submit">Actualizar</button>
+  </form>
+
+  @if (cargando()) {
+    <app-spinner />
+  }
+
+  @if (ganancia(); as g) {
+    <div class="resumen">
+      <div class="card metric">
+        <span class="label">Ventas totales</span>
+        <strong>{{ g.totalVentas | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Costo total</span>
+        <strong>{{ g.totalCosto | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Ganancia bruta</span>
+        <strong>{{ g.ganancia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Costo de pérdidas</span>
+        <strong>{{ g.costoMerma | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Gastos operativos</span>
+        <strong>{{ g.gastosOperativos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric ganancia">
+        <span class="label">Ganancia operativa</span>
+        <strong>{{ g.gananciaOperativa | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Margen</span>
+        <strong>{{ g.margenPorcentaje }}%</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Ticket promedio</span>
+        <strong>{{ g.ticketPromedio | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Ventas del período</span>
+        <strong>{{ g.cantidadVentas }}</strong>
+      </div>
+      <div class="card metric">
+        <span class="label">Ítems vendidos</span>
+        <strong>{{ g.cantidadItemsVendidos }}</strong>
+      </div>
+    </div>
+  }
+
+  @if (stockBajo().length > 0) {
+    <div class="card alerta-stock">
+      <h2><app-icon name="alert-triangle" [size]="18" /> Stock bajo</h2>
+      <ul>
+        @for (producto of stockBajo(); track producto.id) {
+          <li>{{ producto.nombre }} — quedan {{ producto.stockActual }} {{ producto.unidadMedida }} (mínimo {{ producto.stockMinimo }})</li>
+        }
+      </ul>
+    </div>
+  }
+
+  <div class="card">
+    <div class="header-tabla">
+      <h2>Ventas por vendedor</h2>
+      <div class="acciones-export">
+        <button type="button" (click)="exportarVentasPorUsuarioCsv()"><app-icon name="file-text" [size]="16" /> CSV</button>
+        <button type="button" (click)="exportarPdf()"><app-icon name="printer" [size]="16" /> PDF</button>
+      </div>
+    </div>
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Vendedor</th>
+            <th>Cantidad de ventas</th>
+            <th>Total vendido</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of ventasPorUsuario(); track item.usuario; let i = $index) {
+            <tr [class.fuera-de-pagina]="!estaEnPaginaVentasPorUsuario(i)">
+              <td>{{ item.usuario }}</td>
+              <td>{{ item.cantidadVentas }}</td>
+              <td>{{ item.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="vacio"><app-icon name="bar-chart" [size]="18" /> No hay ventas en el período seleccionado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion
+      [pagina]="paginaVentasPorUsuario()"
+      [totalPaginas]="totalPaginasVentasPorUsuario()"
+      (anterior)="paginaAnteriorVentasPorUsuario()"
+      (siguiente)="paginaSiguienteVentasPorUsuario()"
+    />
+  </div>
+
+  <div class="card">
+    <div class="header-tabla">
+      <h2>Productos más rentables</h2>
+      <div class="acciones-export">
+        <button type="button" (click)="exportarProductosCsv()"><app-icon name="file-text" [size]="16" /> CSV</button>
+        <button type="button" (click)="exportarPdf()"><app-icon name="printer" [size]="16" /> PDF</button>
+      </div>
+    </div>
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad vendida</th>
+            <th>Ingresos</th>
+            <th>Ganancia</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of ranking(); track item.productoId; let i = $index) {
+            <tr [class.fuera-de-pagina]="!estaEnPaginaRanking(i)">
+              <td>{{ item.nombre }}</td>
+              <td>{{ item.cantidadVendida }}</td>
+              <td>{{ item.ingresos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              <td>{{ item.ganancia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="vacio"><app-icon name="bar-chart" [size]="18" /> No hay ventas en el período seleccionado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion
+      [pagina]="paginaRanking()"
+      [totalPaginas]="totalPaginasRanking()"
+      (anterior)="paginaAnteriorRanking()"
+      (siguiente)="paginaSiguienteRanking()"
+    />
+  </div>
+
+  <div class="card">
+    <div class="header-tabla">
+      <h2>Categorías más rentables</h2>
+      <div class="acciones-export">
+        <button type="button" (click)="exportarCategoriasCsv()"><app-icon name="file-text" [size]="16" /> CSV</button>
+        <button type="button" (click)="exportarPdf()"><app-icon name="printer" [size]="16" /> PDF</button>
+      </div>
+    </div>
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Categoría</th>
+            <th>Cantidad vendida</th>
+            <th>Ingresos</th>
+            <th>Ganancia</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of rankingCategorias(); track item.categoria; let i = $index) {
+            <tr [class.fuera-de-pagina]="!estaEnPaginaRankingCategorias(i)">
+              <td>{{ item.categoria }}</td>
+              <td>{{ item.cantidadVendida }}</td>
+              <td>{{ item.ingresos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              <td>{{ item.ganancia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="vacio"><app-icon name="bar-chart" [size]="18" /> No hay ventas en el período seleccionado.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion
+      [pagina]="paginaRankingCategorias()"
+      [totalPaginas]="totalPaginasRankingCategorias()"
+      (anterior)="paginaAnteriorRankingCategorias()"
+      (siguiente)="paginaSiguienteRankingCategorias()"
+    />
+  </div>
+</div>

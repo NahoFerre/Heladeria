@@ -1,0 +1,265 @@
+<div class="caja-layout">
+  @if (cargando()) {
+    <app-spinner />
+  } @else if (cajaActual(); as caja) {
+    <div class="card resumen-caja">
+      <h2>Caja abierta</h2>
+      <p class="detalle">
+        Abierta el {{ caja.abiertaEn | date: 'dd/MM/yyyy HH:mm' }}
+        @if (caja.usuarioApertura) {
+          por {{ caja.usuarioApertura }}
+        }
+      </p>
+
+      <div class="metrics">
+        <div class="metric">
+          <span class="label">Monto inicial</span>
+          <strong>{{ caja.montoApertura | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <div class="metric">
+          <span class="label">Efectivo vendido (turno)</span>
+          <strong>{{ caja.totalEfectivoVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <div class="metric destacado">
+          <span class="label">Efectivo esperado en caja</span>
+          <strong>{{ caja.efectivoEsperadoParcial | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+      </div>
+
+      @if (caja.totalIngresos > 0 || caja.totalRetiros > 0 || caja.totalGastos > 0) {
+        <div class="metrics">
+          <div class="metric">
+            <span class="label">Ingresos</span>
+            <strong>{{ caja.totalIngresos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+          <div class="metric">
+            <span class="label">Retiros</span>
+            <strong>{{ caja.totalRetiros | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+          <div class="metric">
+            <span class="label">Gastos</span>
+            <strong>{{ caja.totalGastos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+        </div>
+      }
+
+      @if (caja.totalesPorMetodoPago.length > 0) {
+        <h3>Ventas del turno por método de pago</h3>
+        <div class="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Método</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of caja.totalesPorMetodoPago; track t.metodoPago) {
+                <tr>
+                  <td>{{ formatearMetodoPago(t.metodoPago) }}</td>
+                  <td>{{ t.cantidadVentas }}</td>
+                  <td>{{ t.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="vacio">Todavía no se registraron ventas en este turno.</p>
+      }
+    </div>
+
+    <div class="card movimientos-caja">
+      <h2>Movimientos de esta caja</h2>
+      <div class="acciones-movimiento">
+        <button type="button" class="secondary" (click)="abrirFormMovimiento('INGRESO')">
+          <app-icon name="trending-up" [size]="16" /> Ingreso
+        </button>
+        <button type="button" class="secondary" (click)="abrirFormMovimiento('RETIRO')">
+          <app-icon name="trending-down" [size]="16" /> Retiro
+        </button>
+        <button type="button" class="secondary" (click)="abrirFormMovimiento('GASTO')">
+          <app-icon name="wallet" [size]="16" /> Gasto
+        </button>
+      </div>
+
+      @if (mostrarFormMovimiento(); as tipo) {
+        <div class="form-movimiento">
+          <h3>{{ etiquetaMovimiento(tipo) }}</h3>
+          <label>
+            Monto
+            <app-monto-input [value]="montoMovimiento()" (valueChange)="montoMovimiento.set($event)" />
+          </label>
+          <label>
+            Motivo
+            <input
+              type="text"
+              [ngModel]="motivoMovimiento()"
+              (ngModelChange)="motivoMovimiento.set($event)"
+              placeholder="Ej: compra de hielo"
+            />
+          </label>
+          <div class="botones">
+            <button type="button" class="secondary" (click)="cancelarMovimiento()">Cancelar</button>
+            <button type="button" (click)="registrarMovimiento()" [disabled]="procesandoMovimiento()">
+              {{ procesandoMovimiento() ? 'Guardando...' : 'Guardar' }}
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (movimientos().length > 0) {
+        <div class="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+                <th>Motivo</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of movimientosPagina(); track m.id) {
+                <tr>
+                  <td>{{ m.fecha | date: 'dd/MM HH:mm' }}</td>
+                  <td>{{ etiquetaMovimiento(m.tipo) }}</td>
+                  <td>{{ m.monto | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                  <td>{{ m.motivo }}</td>
+                  <td>{{ m.usuario }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <app-paginacion
+          [pagina]="paginaMovimientos()"
+          [totalPaginas]="totalPaginasMovimientos()"
+          (anterior)="paginaMovimientos.set(paginaMovimientos() - 1)"
+          (siguiente)="paginaMovimientos.set(paginaMovimientos() + 1)"
+        />
+      } @else {
+        <p class="vacio">Todavía no se registraron movimientos en este turno.</p>
+      }
+    </div>
+
+    <div class="card cierre-form">
+      <h2>Cerrar caja</h2>
+      <label>
+        Efectivo contado
+        <app-monto-input [value]="montoContado()" (valueChange)="montoContado.set($event)" />
+      </label>
+      <label>
+        Observación (opcional)
+        <input
+          type="text"
+          [ngModel]="observacion()"
+          (ngModelChange)="observacion.set($event)"
+          placeholder="Ej: faltante por vuelto mal dado"
+        />
+      </label>
+      <button type="button" (click)="cerrarCaja()" [disabled]="procesando()">
+        {{ procesando() ? 'Cerrando...' : 'Cerrar caja' }}
+      </button>
+    </div>
+  } @else {
+    <div class="card apertura-form">
+      <h2>Abrir caja</h2>
+      <p class="detalle">No hay ninguna caja abierta. Abrí una para empezar a vender.</p>
+      <label>
+        Monto inicial (efectivo con el que arrancás)
+        <app-monto-input [value]="montoInicial()" (valueChange)="montoInicial.set($event)" />
+      </label>
+      <button type="button" (click)="abrirCaja()" [disabled]="procesando()">
+        {{ procesando() ? 'Abriendo...' : 'Abrir caja' }}
+      </button>
+    </div>
+  }
+</div>
+
+@if (mostrarResumenCierre() && ultimoCierre(); as cierre) {
+  <div class="overlay" (click)="cerrarResumen()">
+    <div class="card modal resumen-cierre" (click)="$event.stopPropagation()">
+      <h2>Caja cerrada</h2>
+      <p class="detalle">
+        {{ cierre.abiertaEn | date: 'dd/MM HH:mm' }} — {{ cierre.cerradaEn | date: 'dd/MM HH:mm' }}
+        @if (cierre.usuarioApertura || cierre.usuarioCierre) {
+          <br />
+          Abrió {{ cierre.usuarioApertura }} · Cerró {{ cierre.usuarioCierre }}
+        }
+      </p>
+
+      <div class="metrics">
+        <div class="metric">
+          <span class="label">Monto inicial</span>
+          <strong>{{ cierre.montoApertura | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <div class="metric">
+          <span class="label">Efectivo esperado</span>
+          <strong>{{ cierre.montoCierreEsperado | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <div class="metric">
+          <span class="label">Efectivo contado</span>
+          <strong>{{ cierre.montoCierreContado | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+        <div class="metric" [class.alerta]="cierre.diferencia !== 0">
+          <span class="label">Diferencia</span>
+          <strong>{{ cierre.diferencia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+      </div>
+
+      @if (cierre.totalIngresos > 0 || cierre.totalRetiros > 0 || cierre.totalGastos > 0) {
+        <div class="metrics">
+          <div class="metric">
+            <span class="label">Ingresos</span>
+            <strong>{{ cierre.totalIngresos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+          <div class="metric">
+            <span class="label">Retiros</span>
+            <strong>{{ cierre.totalRetiros | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+          <div class="metric">
+            <span class="label">Gastos</span>
+            <strong>{{ cierre.totalGastos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+          </div>
+        </div>
+      }
+
+      @if (cierre.observacion) {
+        <p class="detalle">Observación: {{ cierre.observacion }}</p>
+      }
+
+      @if (cierre.totalesPorMetodoPago.length > 0) {
+        <h3>Ventas del turno por método de pago</h3>
+        <div class="tabla-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Método</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of cierre.totalesPorMetodoPago; track t.metodoPago) {
+                <tr>
+                  <td>{{ formatearMetodoPago(t.metodoPago) }}</td>
+                  <td>{{ t.cantidadVentas }}</td>
+                  <td>{{ t.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="total">
+          <span>Total del turno</span>
+          <strong>{{ cierre.totalVentas | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+        </div>
+      }
+
+      <button type="button" (click)="cerrarResumen()">Cerrar</button>
+    </div>
+  </div>
+}

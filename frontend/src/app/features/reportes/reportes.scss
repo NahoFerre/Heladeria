@@ -1,0 +1,119 @@
+.reportes-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.header-reportes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+}
+
+.acciones-export {
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+
+  button {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    border-radius: var(--radius);
+    padding: 0.45rem 0.9rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &.activo {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #fff;
+      font-weight: 600;
+    }
+  }
+}
+
+.filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+}
+
+.fuera-de-pagina {
+  display: none;
+}
+
+td.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: normal;
+}
+
+@media print {
+  .tabs,
+  .filtros,
+  .acciones-export {
+    display: none;
+  }
+
+  .fuera-de-pagina {
+    display: table-row;
+  }
+
+  .tabla-scroll {
+    overflow: visible;
+  }
+
+  table {
+    font-size: 0.8rem;
+  }
+}

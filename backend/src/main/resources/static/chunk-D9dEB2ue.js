@@ -1,0 +1,1 @@
+var t={EFECTIVO:`Efectivo`,TARJETA:`Tarjeta`,TRANSFERENCIA:`Transferencia`,QR:`QR`};function n(r){return t[r]??r}export{n as t};

@@ -1,0 +1,398 @@
+<div class="inventario-layout">
+  <section class="listado">
+    <div class="header-listado">
+      <h2>Productos</h2>
+      <div class="acciones">
+        <label class="check">
+          <input type="checkbox" [checked]="mostrarInactivos()" (change)="toggleInactivos()" />
+          Mostrar inactivos
+        </label>
+        <button type="button" (click)="nuevoProducto()">+ Nuevo producto</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input
+        type="text"
+        placeholder="Buscar por nombre..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event); onFiltroCambiado()"
+      />
+      <select [ngModel]="categoriaFiltro()" (ngModelChange)="categoriaFiltro.set($event); onFiltroCambiado()">
+        <option value="">Todas las categorías</option>
+        @for (categoria of categorias(); track categoria) {
+          <option [value]="categoria">{{ categoria }}</option>
+        }
+      </select>
+    </div>
+
+    @if (cargando()) {
+      <app-spinner />
+    } @else {
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th (click)="ordenarPor('nombre')" class="ordenable">
+                Nombre @if (columnaOrden() === 'nombre') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+              </th>
+              <th (click)="ordenarPor('categoria')" class="ordenable">
+                Categoría @if (columnaOrden() === 'categoria') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+              </th>
+              <th (click)="ordenarPor('costoUnitario')" class="ordenable">
+                Costo @if (columnaOrden() === 'costoUnitario') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+              </th>
+              <th (click)="ordenarPor('precioVenta')" class="ordenable">
+                Precio @if (columnaOrden() === 'precioVenta') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+              </th>
+              <th (click)="ordenarPor('stockActual')" class="ordenable">
+                Stock @if (columnaOrden() === 'stockActual') { <span>{{ direccionOrden() === 'asc' ? '▲' : '▼' }}</span> }
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (producto of productosPagina(); track producto.id) {
+              <tr [class.bajo-stock]="producto.stockActual <= producto.stockMinimo" [class.inactivo]="!producto.activo">
+                <td>{{ producto.nombre }}</td>
+                <td>{{ producto.categoria }}</td>
+                <td>{{ producto.costoUnitario | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ producto.precioVenta | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ producto.stockActual }} {{ producto.unidadMedida }}</td>
+                <td class="fila-acciones">
+                  <button type="button" class="secondary chico" (click)="verMovimientos(producto)">Stock</button>
+                  <button type="button" class="secondary chico" (click)="editar(producto)">Editar</button>
+                  <button type="button" class="secondary chico" (click)="abrirOpciones(producto)">Variantes</button>
+                  <button type="button" class="secondary chico" (click)="abrirReceta(producto)">Receta</button>
+                  @if (producto.activo) {
+                    <button type="button" class="danger chico" (click)="desactivar(producto)">Baja</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="vacio"><app-icon name="inbox" [size]="18" /> No se encontraron productos.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+  </section>
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="overlay" (click)="cancelarEdicion()">
+    <div class="card modal" (click)="$event.stopPropagation()">
+      <h2>{{ editando() ? 'Editar producto' : 'Nuevo producto' }}</h2>
+
+      <form (ngSubmit)="guardar()">
+        <label>
+          Nombre
+          <input name="nombre" type="text" [(ngModel)]="formulario().nombre" required />
+        </label>
+        <label>
+          Categoría
+          <input name="categoria" type="text" [(ngModel)]="formulario().categoria" />
+        </label>
+        <label>
+          Unidad de medida
+          <input name="unidadMedida" type="text" [(ngModel)]="formulario().unidadMedida" required />
+        </label>
+        <div class="fila-2">
+          <label>
+            Costo
+            <input name="costoUnitario" type="number" min="0" step="0.01" [(ngModel)]="formulario().costoUnitario" required />
+          </label>
+          <label>
+            Precio de venta
+            <input name="precioVenta" type="number" min="0" step="0.01" [(ngModel)]="formulario().precioVenta" required />
+          </label>
+        </div>
+        <div class="fila-2">
+          @if (!editando()) {
+            <label>
+              Stock inicial
+              <input name="stockActual" type="number" min="0" step="0.01" [(ngModel)]="formulario().stockActual" />
+            </label>
+          }
+          <label>
+            Stock mínimo (alerta)
+            <input name="stockMinimo" type="number" min="0" step="0.01" [(ngModel)]="formulario().stockMinimo" />
+          </label>
+        </div>
+
+        <div class="botones">
+          <button type="submit">{{ editando() ? 'Guardar cambios' : 'Crear producto' }}</button>
+          <button type="button" class="secondary" (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (productoMovimientos(); as producto) {
+  <div class="overlay" (click)="cerrarMovimientos()">
+    <div class="card modal" (click)="$event.stopPropagation()">
+      <h2>Stock: {{ producto.nombre }}</h2>
+      <p class="stock-actual">Stock actual: <strong>{{ producto.stockActual }} {{ producto.unidadMedida }}</strong></p>
+
+      <form class="fila-2 form-movimiento" (ngSubmit)="registrarMovimiento()">
+        <label>
+          Tipo
+          <select name="tipo" [(ngModel)]="nuevoMovimiento().tipo">
+            <option value="ENTRADA">Entrada (compra)</option>
+            <option value="SALIDA">Salida (pérdida)</option>
+            <option value="AJUSTE">Ajuste (fija el stock)</option>
+          </select>
+        </label>
+        <label>
+          Cantidad
+          <input name="cantidad" type="number" min="0" step="0.01" [(ngModel)]="nuevoMovimiento().cantidad" required />
+        </label>
+        <label class="motivo">
+          Motivo
+          <input name="motivo" type="text" [(ngModel)]="nuevoMovimiento().motivo" placeholder="Ej: compra a proveedor" />
+        </label>
+        <button type="submit">Registrar</button>
+      </form>
+
+      <h3>Historial</h3>
+      <div class="historial-scroll">
+        <table class="historial">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Motivo</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (mov of movimientosPagina(); track mov.id) {
+              <tr>
+                <td><span class="tipo" [class]="mov.tipo.toLowerCase()">{{ mov.tipo }}</span></td>
+                <td>{{ mov.cantidad }}</td>
+                <td class="motivo-texto">{{ mov.motivo || '—' }}</td>
+                <td class="fecha">{{ mov.fecha | date: 'short' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="vacio"><app-icon name="inbox" [size]="18" /> Sin movimientos todavía</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginacion
+        [pagina]="paginaMovimientos()"
+        [totalPaginas]="totalPaginasMovimientos()"
+        (anterior)="paginaAnteriorMovimientos()"
+        (siguiente)="paginaSiguienteMovimientos()"
+      />
+
+      <button type="button" class="secondary" (click)="cerrarMovimientos()">Cerrar</button>
+    </div>
+  </div>
+}
+
+@if (productoOpciones(); as producto) {
+  <div class="overlay" (click)="cerrarOpciones()">
+    <div class="card modal modal-opciones" (click)="$event.stopPropagation()">
+      <h2>Variantes y adicionales: {{ producto.nombre }}</h2>
+
+      <section class="seccion-opciones">
+        <div class="header-seccion">
+          <h3>Variantes</h3>
+          <button type="button" class="secondary chico" (click)="agregarVariante()">+ Agregar variante</button>
+        </div>
+
+        @for (variante of variantesForm(); track $index; let i = $index) {
+          <div class="fila-opcion">
+            <input type="text" placeholder="Nombre (ej. 2 bochas)" [ngModel]="variante.nombre" (ngModelChange)="variantesForm()[i].nombre = $event" />
+            <input type="number" min="0" step="0.01" placeholder="Precio" [ngModel]="variante.precio" (ngModelChange)="variantesForm()[i].precio = $event" />
+            <input type="number" min="0" step="0.01" placeholder="Costo" [ngModel]="variante.costo" (ngModelChange)="variantesForm()[i].costo = $event" />
+            <input type="text" placeholder="SKU (opcional)" [ngModel]="variante.sku" (ngModelChange)="variantesForm()[i].sku = $event" />
+            @if (!variante.id) {
+              <input type="number" min="0" step="0.01" placeholder="Stock inicial" [ngModel]="variante.stockActual" (ngModelChange)="variantesForm()[i].stockActual = $event" />
+            }
+            <input type="number" min="0" step="0.01" placeholder="Stock mínimo" [ngModel]="variante.stockMinimo" (ngModelChange)="variantesForm()[i].stockMinimo = $event" />
+            <label class="check">
+              <input type="checkbox" [ngModel]="variante.activo" (ngModelChange)="variantesForm()[i].activo = $event" />
+              Activa
+            </label>
+            @if (!variante.id) {
+              <button type="button" class="danger chico" (click)="quitarVariante(i)">Quitar</button>
+            }
+          </div>
+        } @empty {
+          <p class="vacio">Sin variantes configuradas — el producto se vende con su precio normal.</p>
+        }
+      </section>
+
+      <section class="seccion-opciones">
+        <div class="header-seccion">
+          <h3>Grupos de adicionales</h3>
+          <button type="button" class="secondary chico" (click)="agregarGrupo()">+ Agregar grupo</button>
+        </div>
+
+        @for (grupo of gruposForm(); track $index; let gi = $index) {
+          <div class="grupo-card">
+            <div class="fila-grupo">
+              <input type="text" placeholder="Nombre del grupo (ej. Toppings)" [ngModel]="grupo.nombre" (ngModelChange)="gruposForm()[gi].nombre = $event" />
+              <label>
+                Mín
+                <input type="number" min="0" [ngModel]="grupo.minSeleccion" (ngModelChange)="gruposForm()[gi].minSeleccion = $event" />
+              </label>
+              <label>
+                Máx
+                <input type="number" min="1" [ngModel]="grupo.maxSeleccion" (ngModelChange)="gruposForm()[gi].maxSeleccion = $event" />
+              </label>
+              @if (!grupo.id) {
+                <button type="button" class="danger chico" (click)="quitarGrupo(gi)">Quitar grupo</button>
+              }
+            </div>
+
+            @for (opcion of grupo.opciones; track $index; let oi = $index) {
+              <div class="fila-opcion">
+                <input type="text" placeholder="Nombre (ej. Granola)" [ngModel]="opcion.nombre" (ngModelChange)="gruposForm()[gi].opciones[oi].nombre = $event" />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Precio adicional"
+                  [ngModel]="opcion.precioAdicional"
+                  (ngModelChange)="gruposForm()[gi].opciones[oi].precioAdicional = $event"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Costo"
+                  [ngModel]="opcion.costoAdicional"
+                  (ngModelChange)="gruposForm()[gi].opciones[oi].costoAdicional = $event"
+                />
+                <label class="check">
+                  <input type="checkbox" [ngModel]="opcion.controlaStock" (ngModelChange)="gruposForm()[gi].opciones[oi].controlaStock = $event" />
+                  Controla stock
+                </label>
+                @if (opcion.controlaStock) {
+                  @if (!opcion.id) {
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="Stock inicial"
+                      [ngModel]="opcion.stockActual"
+                      (ngModelChange)="gruposForm()[gi].opciones[oi].stockActual = $event"
+                    />
+                  }
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Stock mínimo"
+                    [ngModel]="opcion.stockMinimo"
+                    (ngModelChange)="gruposForm()[gi].opciones[oi].stockMinimo = $event"
+                  />
+                }
+                <label class="check">
+                  <input type="checkbox" [ngModel]="opcion.activo" (ngModelChange)="gruposForm()[gi].opciones[oi].activo = $event" />
+                  Activo
+                </label>
+                @if (!opcion.id) {
+                  <button type="button" class="danger chico" (click)="quitarOpcion(gi, oi)">Quitar</button>
+                }
+              </div>
+            } @empty {
+              <p class="vacio">Sin opciones en este grupo todavía.</p>
+            }
+
+            <button type="button" class="secondary chico" (click)="agregarOpcion(gi)">+ Agregar opción</button>
+          </div>
+        } @empty {
+          <p class="vacio">Sin grupos de adicionales configurados.</p>
+        }
+      </section>
+
+      <div class="botones">
+        <button type="button" (click)="guardarOpciones()" [disabled]="guardandoOpciones()">
+          {{ guardandoOpciones() ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+        <button type="button" class="secondary" (click)="cerrarOpciones()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (productoReceta(); as producto) {
+  <div class="overlay" (click)="cerrarReceta()">
+    <div class="card modal modal-opciones" (click)="$event.stopPropagation()">
+      <h2>Receta: {{ producto.nombre }}</h2>
+
+      @if (insumosDisponibles().length === 0) {
+        <p class="vacio">Todavía no hay insumos cargados — creá alguno en "Insumos" antes de armar una receta.</p>
+      }
+
+      @if (!producto.variantes?.length) {
+        <section class="seccion-opciones">
+          @for (item of recetaProductoForm(); track $index; let i = $index) {
+            <div class="fila-opcion">
+              <select [ngModel]="item.insumoId" (ngModelChange)="recetaProductoForm()[i].insumoId = $event">
+                @for (insumo of insumosDisponibles(); track insumo.id) {
+                  <option [ngValue]="insumo.id">{{ insumo.nombre }} ({{ formatearUnidadMedida(insumo.unidadMedida) }})</option>
+                }
+              </select>
+              <input type="number" min="0" step="0.0001" placeholder="Cantidad" [ngModel]="item.cantidad" (ngModelChange)="recetaProductoForm()[i].cantidad = $event" />
+              <button type="button" class="danger chico" (click)="quitarInsumoProducto(i)">Quitar</button>
+            </div>
+          } @empty {
+            <p class="vacio">Sin insumos en la receta todavía — el producto se vende con su costo manual.</p>
+          }
+          <button type="button" class="secondary chico" [disabled]="insumosDisponibles().length === 0" (click)="agregarInsumoProducto()">
+            + Agregar insumo
+          </button>
+        </section>
+      } @else {
+        @for (rv of recetasVariantesForm(); track rv.varianteId; let vi = $index) {
+          <div class="grupo-card">
+            <h3>Receta: {{ rv.varianteNombre }}</h3>
+            @for (item of rv.items; track $index; let ii = $index) {
+              <div class="fila-opcion">
+                <select [ngModel]="item.insumoId" (ngModelChange)="recetasVariantesForm()[vi].items[ii].insumoId = $event">
+                  @for (insumo of insumosDisponibles(); track insumo.id) {
+                    <option [ngValue]="insumo.id">{{ insumo.nombre }} ({{ formatearUnidadMedida(insumo.unidadMedida) }})</option>
+                  }
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.0001"
+                  placeholder="Cantidad"
+                  [ngModel]="item.cantidad"
+                  (ngModelChange)="recetasVariantesForm()[vi].items[ii].cantidad = $event"
+                />
+                <button type="button" class="danger chico" (click)="quitarInsumoVariante(vi, ii)">Quitar</button>
+              </div>
+            } @empty {
+              <p class="vacio">Sin insumos en esta receta todavía — la variante se vende con su costo manual.</p>
+            }
+            <button type="button" class="secondary chico" [disabled]="insumosDisponibles().length === 0" (click)="agregarInsumoVariante(vi)">
+              + Agregar insumo
+            </button>
+          </div>
+        }
+      }
+
+      <div class="botones">
+        <button type="button" (click)="guardarReceta()" [disabled]="guardandoReceta()">
+          {{ guardandoReceta() ? 'Guardando...' : 'Guardar receta' }}
+        </button>
+        <button type="button" class="secondary" (click)="cerrarReceta()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+}

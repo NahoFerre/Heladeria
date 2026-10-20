@@ -1,0 +1,203 @@
+<div class="compras-layout">
+  <h1>Compras</h1>
+
+  <div class="card nueva-compra">
+    <h2>Nueva compra</h2>
+
+    <div class="fila-2">
+      <label>
+        Proveedor (opcional)
+        <input type="text" [ngModel]="proveedor()" (ngModelChange)="proveedor.set($event)" placeholder="Ej: Distribuidora XYZ" />
+      </label>
+      <label>
+        N° de factura (opcional)
+        <input type="text" [ngModel]="numeroFactura()" (ngModelChange)="numeroFactura.set($event)" />
+      </label>
+    </div>
+    <div class="fila-2">
+      <label>
+        Método de pago (opcional)
+        <input type="text" [ngModel]="metodoPago()" (ngModelChange)="metodoPago.set($event)" placeholder="Ej: Efectivo, transferencia" />
+      </label>
+      <label>
+        Observaciones (opcional)
+        <input type="text" [ngModel]="observaciones()" (ngModelChange)="observaciones.set($event)" />
+      </label>
+    </div>
+
+    <h3>Agregar ítem</h3>
+    <div class="agregar-item">
+      <label class="tipo-item">
+        <select [ngModel]="tipoItem()" (ngModelChange)="tipoItem.set($event)">
+          <option value="INSUMO">Insumo</option>
+          <option value="PRODUCTO">Producto</option>
+        </select>
+      </label>
+
+      @if (tipoItem() === 'INSUMO') {
+        <label class="elemento">
+          <select [ngModel]="insumoIdItem()" (ngModelChange)="seleccionarInsumo($event)">
+            <option [ngValue]="null">Seleccionar insumo...</option>
+            @for (insumo of insumos(); track insumo.id) {
+              <option [ngValue]="insumo.id">{{ insumo.nombre }}</option>
+            }
+          </select>
+        </label>
+      } @else {
+        <label class="elemento">
+          <select [ngModel]="productoIdItem()" (ngModelChange)="seleccionarProducto($event)">
+            <option [ngValue]="null">Seleccionar producto...</option>
+            @for (producto of productos(); track producto.id) {
+              <option [ngValue]="producto.id">{{ producto.nombre }}</option>
+            }
+          </select>
+        </label>
+      }
+
+      <label class="cantidad">
+        Cantidad
+        <input type="number" min="0" step="0.01" [ngModel]="cantidadItem()" (ngModelChange)="cantidadItem.set($event)" />
+      </label>
+      <label class="costo">
+        Costo unitario
+        <app-monto-input [value]="costoUnitarioItem()" (valueChange)="costoUnitarioItem.set($event)" />
+      </label>
+      <button type="button" class="secondary" (click)="agregarItem()">+ Agregar</button>
+    </div>
+
+    @if (items().length > 0) {
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Nombre</th>
+              <th>Cantidad</th>
+              <th>Costo unitario</th>
+              <th>Subtotal</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.lineId) {
+              <tr>
+                <td>{{ item.tipo === 'INSUMO' ? 'Insumo' : 'Producto' }}</td>
+                <td>{{ item.nombre }}{{ item.unidad ? ' (' + item.unidad + ')' : '' }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.costoUnitario | currency: 'PYG' : 'symbol-narrow' : '1.0-2' }}</td>
+                <td>{{ item.cantidad * item.costoUnitario | currency: 'PYG' : 'symbol-narrow' : '1.0-2' }}</td>
+                <td>
+                  <button type="button" class="danger chico" (click)="quitarItem(item.lineId)">Quitar</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="total">
+        <span>Total</span>
+        <strong>{{ total() | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+    } @else {
+      <p class="vacio">Todavía no agregaste ítems a esta compra.</p>
+    }
+
+    <button type="button" (click)="registrarCompra()" [disabled]="procesando()">
+      {{ procesando() ? 'Registrando...' : 'Registrar compra' }}
+    </button>
+  </div>
+
+  <div class="card historial">
+    <h2>Historial de compras</h2>
+    @if (cargandoHistorial()) {
+      <app-spinner />
+    } @else {
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>N° factura</th>
+              <th>Total</th>
+              <th>Usuario</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (compra of comprasPagina(); track compra.id) {
+              <tr>
+                <td>{{ compra.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                <td>{{ compra.proveedor || '—' }}</td>
+                <td>{{ compra.numeroFactura || '—' }}</td>
+                <td>{{ compra.total | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ compra.usuarioNombreMomento }}</td>
+                <td>
+                  <button type="button" class="secondary chico" (click)="verDetalle(compra)">Ver detalle</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="vacio"><app-icon name="inbox" [size]="18" /> Todavía no hay compras registradas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    }
+  </div>
+</div>
+
+@if (compraSeleccionada(); as compra) {
+  <div class="overlay" (click)="cerrarDetalle()">
+    <div class="card modal detalle-compra" (click)="$event.stopPropagation()">
+      <h2>Compra #{{ compra.id }}</h2>
+      <p class="detalle">
+        {{ compra.fecha | date: 'dd/MM/yyyy HH:mm' }}
+        @if (compra.proveedor) {
+          — {{ compra.proveedor }}
+        }
+        @if (compra.numeroFactura) {
+          (factura {{ compra.numeroFactura }})
+        }
+      </p>
+
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Ítem</th>
+              <th>Cantidad</th>
+              <th>Costo unitario</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of compra.items; track item.id) {
+              <tr>
+                <td>{{ item.nombreMomento }}</td>
+                <td>{{ item.cantidad }}{{ item.insumo ? ' ' + formatearUnidadMedida(item.insumo.unidadMedida) : '' }}</td>
+                <td>{{ item.costoUnitario | currency: 'PYG' : 'symbol-narrow' : '1.0-2' }}</td>
+                <td>{{ item.subtotal | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="total">
+        <span>Total</span>
+        <strong>{{ compra.total | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+
+      @if (compra.observaciones) {
+        <p class="detalle">Observaciones: {{ compra.observaciones }}</p>
+      }
+      @if (compra.metodoPago) {
+        <p class="detalle">Método de pago: {{ compra.metodoPago }}</p>
+      }
+
+      <button type="button" (click)="cerrarDetalle()">Cerrar</button>
+    </div>
+  </div>
+}

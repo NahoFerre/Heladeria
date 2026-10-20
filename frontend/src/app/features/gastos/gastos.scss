@@ -1,0 +1,83 @@
+.gastos-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  h3 {
+    margin: 0.5rem 0 0;
+    font-size: 0.95rem;
+  }
+}
+
+.fila-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.metric-total {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  .label {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  strong {
+    font-size: 1.4rem;
+    color: var(--color-danger);
+  }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+}
+
+.resumen table td:last-child {
+  text-align: right;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+td.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}

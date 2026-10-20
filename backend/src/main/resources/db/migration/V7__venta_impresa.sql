@@ -1,0 +1,1 @@
+ALTER TABLE ventas ADD COLUMN impreso_en TIMESTAMPTZ;

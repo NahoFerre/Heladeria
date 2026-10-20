@@ -1,0 +1,60 @@
+<div class="usuarios-layout">
+  <section class="listado">
+    <h2>Usuarios</h2>
+
+    <div class="tabla-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (usuario of usuariosPagina(); track usuario.id) {
+            <tr>
+              <td>{{ usuario.username }}</td>
+              <td><span class="rol" [class.admin]="usuario.rol === 'ADMIN'">{{ usuario.rol }}</span></td>
+              <td>
+                @if (usuario.username !== usernameActual) {
+                  <button type="button" class="danger chico" (click)="eliminar(usuario)">Eliminar</button>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="vacio"><app-icon name="users" [size]="18" /> No hay usuarios todavía.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+  </section>
+
+  <aside class="panel card">
+    <h2>Nuevo usuario</h2>
+
+    <form (ngSubmit)="crear()">
+      <label>
+        Usuario
+        <input name="username" type="text" [ngModel]="nuevoUsername()" (ngModelChange)="nuevoUsername.set($event)" required />
+      </label>
+      <label>
+        Contraseña
+        <input name="password" type="password" [ngModel]="nuevoPassword()" (ngModelChange)="nuevoPassword.set($event)" required minlength="6" />
+      </label>
+      <label>
+        Rol
+        <select name="rol" [ngModel]="nuevoRol()" (ngModelChange)="nuevoRol.set($event)">
+          <option value="CAJERO">Cajero (solo Venta)</option>
+          <option value="ADMIN">Administrador (acceso completo)</option>
+        </select>
+      </label>
+
+      <button type="submit" [disabled]="procesando()">{{ procesando() ? 'Creando...' : 'Crear usuario' }}</button>
+    </form>
+  </aside>
+</div>

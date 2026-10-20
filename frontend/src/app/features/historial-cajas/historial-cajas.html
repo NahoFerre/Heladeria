@@ -1,0 +1,72 @@
+<div class="historial-layout">
+  <div class="header-historial">
+    <h1>Historial de cajas</h1>
+    <button type="button" (click)="exportarPdf()"><app-icon name="printer" [size]="16" /> Exportar PDF</button>
+  </div>
+
+  @if (cargando()) {
+    <app-spinner />
+  } @else {
+    <div class="card">
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Apertura</th>
+              <th>Cierre</th>
+              <th>Cajero apertura</th>
+              <th>Cajero cierre</th>
+              <th>Monto inicial</th>
+              <th>Efectivo esperado</th>
+              <th>Efectivo contado</th>
+              <th>Diferencia</th>
+              <th>Total ventas</th>
+              <th>Ingresos</th>
+              <th>Retiros</th>
+              <th>Gastos</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (caja of historial(); track caja.id; let i = $index) {
+              <tr [class.fuera-de-pagina]="!estaEnPaginaActual(i)">
+                <td>{{ caja.abiertaEn | date: 'dd/MM/yy HH:mm' }}</td>
+                <td>{{ caja.cerradaEn | date: 'dd/MM/yy HH:mm' }}</td>
+                <td>{{ caja.usuarioApertura }}</td>
+                <td>{{ caja.usuarioCierre }}</td>
+                <td>{{ caja.montoApertura | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ caja.montoCierreEsperado | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ caja.montoCierreContado | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td [class.alerta]="caja.diferencia !== 0">{{ caja.diferencia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ caja.totalVentas | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ caja.totalIngresos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ caja.totalRetiros | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ caja.totalGastos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="12" class="vacio"><app-icon name="wallet" [size]="18" /> Todavía no hay cajas cerradas.</td>
+              </tr>
+            }
+          </tbody>
+          @if (historial().length > 0) {
+            <tfoot>
+              <tr class="totales">
+                <td colspan="4">Total</td>
+                <td>{{ totales().montoApertura | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ totales().montoCierreEsperado | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ totales().montoCierreContado | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td [class.alerta]="totales().diferencia !== 0">{{ totales().diferencia | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ totales().totalVentas | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ totales().totalIngresos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ totales().totalRetiros | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>{{ totales().totalGastos | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+              </tr>
+            </tfoot>
+          }
+        </table>
+      </div>
+
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    </div>
+  }
+</div>

@@ -1,0 +1,1 @@
+function u(n,r,e){let t=(r-1)*e;return n.slice(t,t+e)}function i(n,r){return Math.max(1,Math.ceil(n/r))}export{u as n,i as t};

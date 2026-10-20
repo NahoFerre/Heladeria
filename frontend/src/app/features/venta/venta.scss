@@ -1,0 +1,267 @@
+.alerta-caja {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-color: #f3c8bd;
+  background: #fdf3ef;
+  margin-bottom: 1rem;
+
+  app-icon {
+    color: var(--color-danger);
+    flex-shrink: 0;
+  }
+
+  a {
+    color: var(--color-primary);
+    font-weight: 600;
+  }
+}
+
+.venta-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+  }
+
+  @media print {
+    display: none;
+  }
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+
+  input {
+    flex: 1;
+    min-width: 180px;
+  }
+
+  select {
+    width: auto;
+    min-width: 160px;
+  }
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+td.vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  th,
+  td {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+
+  th.ordenable {
+    cursor: pointer;
+    user-select: none;
+
+    span {
+      font-size: 0.75rem;
+      color: var(--color-primary);
+    }
+
+    &:hover {
+      background: #f5eee7;
+    }
+  }
+
+  tr.sin-stock td {
+    opacity: 0.5;
+  }
+}
+
+.carrito {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: sticky;
+  top: 5rem;
+
+  .vacio {
+    color: var(--color-text-muted);
+  }
+
+  .items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    li {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .detalle-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      min-width: 0;
+
+      .adicionales-linea {
+        font-size: 0.78rem;
+        color: var(--color-text-muted);
+      }
+
+      .promo-linea {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.78rem;
+        color: var(--color-success);
+        font-weight: 600;
+      }
+    }
+
+    .controles {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+
+      .chico {
+        padding: 0.4rem 0.75rem;
+      }
+    }
+
+    .subtotal {
+      font-weight: 600;
+      white-space: nowrap;
+    }
+  }
+
+  .total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.15rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+
+    &.alerta strong {
+      color: var(--color-danger);
+    }
+  }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 36, 32, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 20;
+  animation: fade-in 0.15s ease;
+}
+
+.modal {
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: scale-in 0.18s ease;
+
+  .detalle {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .promo-modal {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-success);
+  }
+
+  .subtotal-modal {
+    margin: 0;
+  }
+
+  .botones {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .grupo-seleccion {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.6rem;
+    background: var(--color-bg);
+    border-radius: var(--radius);
+
+    .titulo-grupo {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+  }
+
+  .opcion-radio,
+  .opcion-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--color-text);
+    cursor: pointer;
+
+    input {
+      width: auto;
+    }
+
+    span:nth-child(2) {
+      flex: 1;
+    }
+  }
+
+  .precio-opcion {
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+}

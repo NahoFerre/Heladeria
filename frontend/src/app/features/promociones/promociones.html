@@ -1,0 +1,156 @@
+<div class="promociones-layout">
+  <div class="header-listado">
+    <h1>Promociones</h1>
+    <div class="acciones">
+      <label class="check">
+        <input type="checkbox" [checked]="mostrarInactivas()" (change)="toggleInactivas()" />
+        Mostrar inactivas
+      </label>
+      <button type="button" (click)="nuevaPromocion()">+ Nueva promoción</button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <app-spinner />
+  } @else {
+    <div class="card">
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Aplica a</th>
+              <th>Cant. mínima</th>
+              <th>Vigencia</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (promocion of promocionesPagina(); track promocion.id) {
+              <tr [class.inactivo]="!promocion.activo">
+                <td>{{ promocion.nombre }}</td>
+                <td>{{ etiquetaTipo(promocion.tipo) }}</td>
+                <td>
+                  @switch (promocion.tipo) {
+                    @case ('PORCENTAJE') {
+                      {{ promocion.valor }}%
+                    }
+                    @default {
+                      {{ promocion.valor | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}
+                    }
+                  }
+                </td>
+                <td>{{ descripcionCondicion(promocion) }}</td>
+                <td>{{ promocion.cantidadMinima }}</td>
+                <td>
+                  @if (promocion.fechaInicio || promocion.fechaFin) {
+                    {{ promocion.fechaInicio | date: 'dd/MM/yy' }} — {{ promocion.fechaFin | date: 'dd/MM/yy' }}
+                  } @else {
+                    Sin límite
+                  }
+                </td>
+                <td class="fila-acciones">
+                  <button type="button" class="secondary chico" (click)="editar(promocion)">Editar</button>
+                  @if (promocion.activo) {
+                    <button type="button" class="danger chico" (click)="eliminar(promocion)">Baja</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="vacio"><app-icon name="inbox" [size]="18" /> No hay promociones cargadas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    </div>
+  }
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="overlay" (click)="cancelarEdicion()">
+    <div class="card modal" (click)="$event.stopPropagation()">
+      <h2>{{ editando() ? 'Editar promoción' : 'Nueva promoción' }}</h2>
+
+      <form (ngSubmit)="guardar()">
+        <label>
+          Nombre
+          <input name="nombre" type="text" [(ngModel)]="formulario().nombre" placeholder="Ej: 15% en Açaí Bowls" required />
+        </label>
+
+        <div class="fila-2">
+          <label>
+            Tipo
+            <select name="tipo" [(ngModel)]="formulario().tipo">
+              @for (tipo of tipos; track tipo) {
+                <option [value]="tipo">{{ etiquetaTipo(tipo) }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            @switch (formulario().tipo) {
+              @case ('PORCENTAJE') {
+                Porcentaje (%)
+              }
+              @case ('PRECIO_ESPECIAL') {
+                Precio final (Gs.)
+              }
+              @default {
+                Monto a descontar (Gs.)
+              }
+            }
+            <input name="valor" type="number" min="0" step="0.01" [(ngModel)]="formulario().valor" required />
+          </label>
+        </div>
+
+        <p class="ayuda">Sin producto ni categoría, la promo aplica a todo el catálogo.</p>
+        <div class="fila-2">
+          <label>
+            Producto (opcional)
+            <select name="productoId" [(ngModel)]="formulario().productoId">
+              <option [ngValue]="null">— Cualquiera —</option>
+              @for (producto of productos(); track producto.id) {
+                <option [ngValue]="producto.id">{{ producto.nombre }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Categoría (opcional, si no elegís producto)
+            <input name="categoria" type="text" [(ngModel)]="formulario().categoria" placeholder="Ej: Açaí" />
+          </label>
+        </div>
+
+        <div class="fila-2">
+          <label>
+            Fecha inicio (opcional)
+            <input name="fechaInicio" type="date" [(ngModel)]="formulario().fechaInicio" />
+          </label>
+          <label>
+            Fecha fin (opcional)
+            <input name="fechaFin" type="date" [(ngModel)]="formulario().fechaFin" />
+          </label>
+        </div>
+
+        <label>
+          Cantidad mínima por venta
+          <input name="cantidadMinima" type="number" min="1" step="1" [(ngModel)]="formulario().cantidadMinima" required />
+        </label>
+
+        <label class="check">
+          <input name="activo" type="checkbox" [(ngModel)]="formulario().activo" />
+          Activa
+        </label>
+
+        <div class="botones">
+          <button type="submit">{{ editando() ? 'Guardar cambios' : 'Crear promoción' }}</button>
+          <button type="button" class="secondary" (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

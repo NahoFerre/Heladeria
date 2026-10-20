@@ -1,0 +1,1 @@
+ALTER TABLE ventas ADD COLUMN usuario_id BIGINT REFERENCES usuarios(id) ON DELETE SET NULL;

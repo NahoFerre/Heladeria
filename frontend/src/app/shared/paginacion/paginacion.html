@@ -1,0 +1,9 @@
+<div class="paginacion">
+  <button type="button" class="secondary" [disabled]="pagina() <= 1" (click)="anterior.emit()">
+    <app-icon name="chevron-left" [size]="16" /> Anterior
+  </button>
+  <span>Página {{ pagina() }} de {{ totalPaginas() }}</span>
+  <button type="button" class="secondary" [disabled]="pagina() >= totalPaginas()" (click)="siguiente.emit()">
+    Siguiente <app-icon name="chevron-right" [size]="16" />
+  </button>
+</div>

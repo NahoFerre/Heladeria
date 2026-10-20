@@ -1,0 +1,2 @@
+function d(c,o,s){let r=e=>{let n=String(e??``);return/[";\n]/.test(n)?`"${n.replace(/"/g,`""`)}"`:n},b=[o.map(e=>r(e.encabezado)).join(`;`),...s.map(e=>o.map(n=>r(n.valor(e))).join(`;`))].join(`\r
+`),m=new Blob([`﻿`+b],{type:`text/csv;charset=utf-8;`}),a=URL.createObjectURL(m),t=document.createElement(`a`);t.href=a,t.download=c,t.click(),URL.revokeObjectURL(a)}export{d as t};

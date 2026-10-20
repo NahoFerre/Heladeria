@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: heladeria_db
+      POSTGRES_USER: heladeria_app
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definir DB_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heladeria_app -d heladeria_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/heladeria_db
+      SPRING_DATASOURCE_USERNAME: heladeria_app
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Definir DB_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:8081:8081"
+
+volumes:
+  pgdata:

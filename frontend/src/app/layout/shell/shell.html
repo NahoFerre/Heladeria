@@ -1,0 +1,134 @@
+<div class="app-shell">
+  <aside class="sidebar" [class.colapsado]="colapsado()">
+    <div class="brand">
+      <img src="/logo.png" alt="Heladería" />
+      @if (!colapsado()) {
+        <span>Heladería &amp; Açaí</span>
+      }
+    </div>
+
+    <button
+      type="button"
+      class="toggle"
+      (click)="toggleSidebar()"
+      [attr.aria-label]="colapsado() ? 'Expandir menú' : 'Colapsar menú'"
+      [title]="colapsado() ? 'Expandir menú' : 'Colapsar menú'"
+    >
+      {{ colapsado() ? '›' : '‹' }}
+    </button>
+
+    <nav>
+      <a routerLink="/inicio" routerLinkActive="active" [title]="colapsado() ? 'Inicio' : ''">
+        <span class="icono"><app-icon name="home" [size]="19" /></span>
+        @if (!colapsado()) {
+          <span class="texto">Inicio</span>
+        }
+      </a>
+      <a routerLink="/venta" routerLinkActive="active" [title]="colapsado() ? 'Venta' : ''">
+        <span class="icono"><app-icon name="cart" [size]="19" /></span>
+        @if (!colapsado()) {
+          <span class="texto">Venta</span>
+        }
+      </a>
+      <a routerLink="/caja" routerLinkActive="active" [title]="colapsado() ? 'Caja' : ''">
+        <span class="icono"><app-icon name="wallet" [size]="19" /></span>
+        @if (!colapsado()) {
+          <span class="texto">Caja</span>
+        }
+      </a>
+      <a routerLink="/registro-ventas" routerLinkActive="active" [title]="colapsado() ? 'Registro de ventas' : ''">
+        <span class="icono"><app-icon name="file-text" [size]="19" /></span>
+        @if (!colapsado()) {
+          <span class="texto">Registro de ventas</span>
+        }
+      </a>
+      @if (esAdmin) {
+        <a routerLink="/inventario" routerLinkActive="active" [title]="colapsado() ? 'Inventario' : ''">
+          <span class="icono"><app-icon name="box" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Inventario</span>
+          }
+        </a>
+        <a routerLink="/insumos" routerLinkActive="active" [title]="colapsado() ? 'Insumos' : ''">
+          <span class="icono"><app-icon name="layers" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Insumos</span>
+          }
+        </a>
+        <a routerLink="/compras" routerLinkActive="active" [title]="colapsado() ? 'Compras' : ''">
+          <span class="icono"><app-icon name="inbox" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Compras</span>
+          }
+        </a>
+        <a routerLink="/perdidas" routerLinkActive="active" [title]="colapsado() ? 'Pérdidas' : ''">
+          <span class="icono"><app-icon name="trash" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Pérdidas</span>
+          }
+        </a>
+        <a routerLink="/gastos" routerLinkActive="active" [title]="colapsado() ? 'Gastos' : ''">
+          <span class="icono"><app-icon name="credit-card" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Gastos</span>
+          }
+        </a>
+        <a routerLink="/dashboard" routerLinkActive="active" [title]="colapsado() ? 'Ganancias' : ''">
+          <span class="icono"><app-icon name="trending-up" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Ganancias</span>
+          }
+        </a>
+        <a routerLink="/promociones" routerLinkActive="active" [title]="colapsado() ? 'Promociones' : ''">
+          <span class="icono"><app-icon name="trending-down" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Promociones</span>
+          }
+        </a>
+        <a routerLink="/reportes" routerLinkActive="active" [title]="colapsado() ? 'Reportes' : ''">
+          <span class="icono"><app-icon name="bar-chart" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Reportes</span>
+          }
+        </a>
+        <a routerLink="/historial-cajas" routerLinkActive="active" [title]="colapsado() ? 'Historial de cajas' : ''">
+          <span class="icono"><app-icon name="archive" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Historial de cajas</span>
+          }
+        </a>
+        <a routerLink="/usuarios" routerLinkActive="active" [title]="colapsado() ? 'Usuarios' : ''">
+          <span class="icono"><app-icon name="users" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Usuarios</span>
+          }
+        </a>
+        <a routerLink="/auditoria" routerLinkActive="active" [title]="colapsado() ? 'Auditoría' : ''">
+          <span class="icono"><app-icon name="shield" [size]="19" /></span>
+          @if (!colapsado()) {
+            <span class="texto">Auditoría</span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="cuenta">
+      @if (usuario && !colapsado()) {
+        <span class="usuario-actual">{{ usuario.username }} <em>{{ usuario.rol }}</em></span>
+      }
+      <button type="button" class="logout" (click)="cerrarSesion()" [title]="colapsado() ? 'Salir' : ''">
+        @if (colapsado()) {
+          <app-icon name="log-out" [size]="18" />
+        } @else {
+          Salir
+        }
+      </button>
+    </div>
+  </aside>
+
+  <main>
+    <router-outlet />
+  </main>
+
+  <app-toast-container />
+</div>

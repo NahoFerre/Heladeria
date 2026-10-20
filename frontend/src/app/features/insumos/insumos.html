@@ -1,0 +1,106 @@
+<div class="insumos-layout">
+  <div class="header-listado">
+    <h1>Insumos</h1>
+    <div class="acciones">
+      <label class="check">
+        <input type="checkbox" [checked]="mostrarInactivos()" (change)="toggleInactivos()" />
+        Mostrar inactivos
+      </label>
+      <button type="button" (click)="nuevoInsumo()">+ Nuevo insumo</button>
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <app-spinner />
+  } @else {
+    <div class="card">
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Unidad</th>
+              <th>Costo</th>
+              <th>Stock actual</th>
+              <th>Stock mínimo</th>
+              <th>Proveedor</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (insumo of insumosPagina(); track insumo.id) {
+              <tr [class.bajo-stock]="insumo.stockActual <= insumo.stockMinimo" [class.inactivo]="!insumo.activo">
+                <td>{{ insumo.nombre }}</td>
+                <td>{{ formatearUnidadMedida(insumo.unidadMedida) }}</td>
+                <td>{{ insumo.costoUnitario | currency: 'PYG' : 'symbol-narrow' : '1.0-2' }}</td>
+                <td>{{ insumo.stockActual }}</td>
+                <td>{{ insumo.stockMinimo }}</td>
+                <td>{{ insumo.proveedor || '—' }}</td>
+                <td class="fila-acciones">
+                  <button type="button" class="secondary chico" (click)="editar(insumo)">Editar</button>
+                  @if (insumo.activo) {
+                    <button type="button" class="danger chico" (click)="desactivar(insumo)">Baja</button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="vacio"><app-icon name="inbox" [size]="18" /> No se encontraron insumos.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    </div>
+  }
+</div>
+
+@if (mostrarFormulario()) {
+  <div class="overlay" (click)="cancelarEdicion()">
+    <div class="card modal" (click)="$event.stopPropagation()">
+      <h2>{{ editando() ? 'Editar insumo' : 'Nuevo insumo' }}</h2>
+
+      <form (ngSubmit)="guardar()">
+        <label>
+          Nombre
+          <input name="nombre" type="text" [(ngModel)]="formulario().nombre" required />
+        </label>
+        <label>
+          Unidad de medida
+          <select name="unidadMedida" [(ngModel)]="formulario().unidadMedida">
+            @for (unidad of unidades; track unidad) {
+              <option [value]="unidad">{{ formatearUnidadMedida(unidad) }}</option>
+            }
+          </select>
+        </label>
+        <div class="fila-2">
+          <label>
+            Costo unitario
+            <input name="costoUnitario" type="number" min="0" step="0.01" [(ngModel)]="formulario().costoUnitario" required />
+          </label>
+          <label>
+            Proveedor (opcional)
+            <input name="proveedor" type="text" [(ngModel)]="formulario().proveedor" />
+          </label>
+        </div>
+        <div class="fila-2">
+          <label>
+            Stock actual
+            <input name="stockActual" type="number" min="0" step="0.01" [(ngModel)]="formulario().stockActual" />
+          </label>
+          <label>
+            Stock mínimo (alerta)
+            <input name="stockMinimo" type="number" min="0" step="0.01" [(ngModel)]="formulario().stockMinimo" />
+          </label>
+        </div>
+
+        <div class="botones">
+          <button type="submit">{{ editando() ? 'Guardar cambios' : 'Crear insumo' }}</button>
+          <button type="button" class="secondary" (click)="cancelarEdicion()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

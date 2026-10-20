@@ -1,0 +1,88 @@
+<div class="registro-layout">
+  <h1>Registro de ventas</h1>
+
+  @if (cargando()) {
+    <app-spinner />
+  } @else {
+    <div class="card">
+      <div class="tabla-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Vendedor</th>
+              <th>Método de pago</th>
+              <th>Total</th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (venta of ventasPagina(); track venta.id) {
+              <tr [class.anulada]="venta.estado === 'ANULADA'">
+                <td>{{ venta.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                <td>{{ venta.usuario?.username ?? '—' }}</td>
+                <td>{{ formatearMetodoPago(venta.metodoPago) }}</td>
+                <td>{{ venta.total | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                <td>
+                  @if (venta.estado === 'ANULADA') {
+                    <span class="badge-anulada" [title]="venta.motivoAnulacion ?? ''">
+                      <app-icon name="ban" [size]="14" /> Anulada
+                    </span>
+                  }
+                </td>
+                <td class="fila-acciones">
+                  <button type="button" class="secondary chico" (click)="verTicket(venta)">
+                    <app-icon name="eye" [size]="16" /> Ver ticket
+                  </button>
+                  @if (venta.estado === 'CONFIRMADA') {
+                    <button type="button" class="secondary chico" (click)="imprimirVenta(venta)">
+                      <app-icon name="printer" [size]="16" /> {{ venta.impresoEn ? 'Reimprimir' : 'Imprimir' }}
+                    </button>
+                  }
+                  @if (esAdmin && venta.estado === 'CONFIRMADA') {
+                    <button type="button" class="danger chico" (click)="abrirAnular(venta)">
+                      <app-icon name="ban" [size]="16" /> Anular
+                    </button>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="vacio"><app-icon name="inbox" [size]="18" /> Todavía no hay ventas registradas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    </div>
+  }
+</div>
+
+@if (ventaSeleccionada(); as venta) {
+  <app-ticket [venta]="venta" [autoImprimir]="autoImprimir()" (cerrar)="cerrarTicket()" />
+}
+
+@if (ventaAAnular(); as venta) {
+  <div class="overlay">
+    <div class="card modal">
+      <h2>Anular venta #{{ venta.id }}</h2>
+      <p>
+        Esta acción revierte el stock descontado por la venta y no se puede deshacer. La venta queda marcada como
+        anulada, pero no se elimina del historial.
+      </p>
+      <label>
+        Motivo de la anulación
+        <textarea rows="3" [(ngModel)]="motivoAnulacion" placeholder="Ej: error de carga, cliente se arrepintió..."></textarea>
+      </label>
+      <div class="botones">
+        <button type="button" class="secondary" (click)="cerrarAnular()" [disabled]="anulando()">Cancelar</button>
+        <button type="button" class="danger" (click)="confirmarAnular()" [disabled]="anulando() || !motivoAnulacion().trim()">
+          {{ anulando() ? 'Anulando…' : 'Confirmar anulación' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

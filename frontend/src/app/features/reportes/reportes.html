@@ -1,0 +1,273 @@
+<div class="reportes-layout">
+  <div class="header-reportes">
+    <h1>Reportes</h1>
+    <div class="acciones-export">
+      <button type="button" (click)="exportarCsvActual()"><app-icon name="file-text" [size]="16" /> CSV</button>
+      <button type="button" (click)="exportarPdf()"><app-icon name="printer" [size]="16" /> PDF</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button type="button" [class.activo]="tab() === 'ventas'" (click)="cambiarTab('ventas')">Ventas</button>
+    <button type="button" [class.activo]="tab() === 'metodos-pago'" (click)="cambiarTab('metodos-pago')">Métodos de pago</button>
+    <button type="button" [class.activo]="tab() === 'inventario'" (click)="cambiarTab('inventario')">Inventario</button>
+    <button type="button" [class.activo]="tab() === 'compras'" (click)="cambiarTab('compras')">Compras</button>
+    <button type="button" [class.activo]="tab() === 'perdidas'" (click)="cambiarTab('perdidas')">Pérdidas</button>
+    <button type="button" [class.activo]="tab() === 'gastos'" (click)="cambiarTab('gastos')">Gastos</button>
+  </div>
+
+  <form class="filtros card" (ngSubmit)="aplicarFiltros()">
+    <label>
+      Desde
+      <input name="desde" type="date" [(ngModel)]="desde" />
+    </label>
+    <label>
+      Hasta
+      <input name="hasta" type="date" [(ngModel)]="hasta" />
+    </label>
+
+    @if (tab() === 'ventas' || tab() === 'compras' || tab() === 'perdidas' || tab() === 'gastos') {
+      <label>
+        Usuario
+        <select name="usuarioId" [(ngModel)]="usuarioId">
+          <option [ngValue]="null">Todos</option>
+          @for (usuario of usuarios(); track usuario.id) {
+            <option [ngValue]="usuario.id">{{ usuario.username }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    @if (tab() === 'ventas' || tab() === 'compras' || tab() === 'gastos') {
+      <label>
+        Método de pago
+        <select name="metodoPago" [(ngModel)]="metodoPago">
+          <option value="">Todos</option>
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="TARJETA">Tarjeta</option>
+          <option value="TRANSFERENCIA">Transferencia</option>
+          <option value="QR">QR</option>
+        </select>
+      </label>
+    }
+
+    @if (tab() === 'ventas') {
+      <label>
+        Caja
+        <select name="cajaId" [(ngModel)]="cajaId">
+          <option [ngValue]="null">Todas</option>
+          @for (caja of cajas(); track caja.id) {
+            <option [ngValue]="caja.id">{{ caja.etiqueta }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    @if (tab() === 'inventario' || tab() === 'perdidas') {
+      <label>
+        Producto
+        <select name="productoId" [(ngModel)]="productoId">
+          <option [ngValue]="null">Todos</option>
+          @for (producto of productos(); track producto.id) {
+            <option [ngValue]="producto.id">{{ producto.nombre }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    @if (tab() === 'gastos') {
+      <label>
+        Categoría
+        <input name="categoria" type="text" [(ngModel)]="categoria" placeholder="Ej: Limpieza" />
+      </label>
+    }
+
+    <button type="submit">Aplicar filtros</button>
+  </form>
+
+  @if (cargando()) {
+    <app-spinner />
+  } @else {
+    <div class="card">
+      <div class="tabla-scroll">
+        @if (tab() === 'ventas') {
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Usuario</th>
+                <th>Método de pago</th>
+                <th>Total</th>
+                <th>Caja</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (v of ventas(); track v.id; let i = $index) {
+                <tr [class.fuera-de-pagina]="!estaEnPagina(i)">
+                  <td>{{ v.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ v.usuario }}</td>
+                  <td>{{ formatearMetodoPago(v.metodoPago) }}</td>
+                  <td>{{ v.total | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                  <td>#{{ v.cajaId }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="vacio"><app-icon name="bar-chart" [size]="18" /> No hay ventas en el período/filtros seleccionados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (tab() === 'metodos-pago') {
+          <table>
+            <thead>
+              <tr>
+                <th>Método de pago</th>
+                <th>Cantidad de ventas</th>
+                <th>Total vendido</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of metodosPago(); track m.metodoPago; let i = $index) {
+                <tr [class.fuera-de-pagina]="!estaEnPagina(i)">
+                  <td>{{ formatearMetodoPago(m.metodoPago) }}</td>
+                  <td>{{ m.cantidadVentas }}</td>
+                  <td>{{ m.totalVendido | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="3" class="vacio"><app-icon name="bar-chart" [size]="18" /> No hay ventas en el período seleccionado.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (tab() === 'inventario') {
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of inventario(); track m.id; let i = $index) {
+                <tr [class.fuera-de-pagina]="!estaEnPagina(i)">
+                  <td>{{ m.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ m.producto }}</td>
+                  <td>{{ m.tipo }}</td>
+                  <td>{{ m.cantidad }}</td>
+                  <td>{{ m.motivo }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="vacio"><app-icon name="box" [size]="18" /> No hay movimientos en el período/filtros seleccionados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (tab() === 'compras') {
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Proveedor</th>
+                <th>Nº factura</th>
+                <th>Método de pago</th>
+                <th>Usuario</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of compras(); track c.id; let i = $index) {
+                <tr [class.fuera-de-pagina]="!estaEnPagina(i)">
+                  <td>{{ c.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ c.proveedor }}</td>
+                  <td>{{ c.numeroFactura }}</td>
+                  <td>{{ c.metodoPago ? formatearMetodoPago(c.metodoPago) : '' }}</td>
+                  <td>{{ c.usuarioNombreMomento }}</td>
+                  <td>{{ c.total | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="vacio"><app-icon name="inbox" [size]="18" /> No hay compras en el período/filtros seleccionados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (tab() === 'perdidas') {
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Ítem</th>
+                <th>Cantidad</th>
+                <th>Motivo</th>
+                <th>Costo total</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of mermas(); track m.id; let i = $index) {
+                <tr [class.fuera-de-pagina]="!estaEnPagina(i)">
+                  <td>{{ m.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ m.nombreMomento }}</td>
+                  <td>{{ m.cantidad }}</td>
+                  <td>{{ formatearMotivoMerma(m.motivo) }}</td>
+                  <td>{{ m.costoTotal | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                  <td>{{ m.usuarioNombreMomento }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="vacio"><app-icon name="trash" [size]="18" /> No hay pérdidas en el período/filtros seleccionados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+
+        @if (tab() === 'gastos') {
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Método de pago</th>
+                <th>Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (g of gastos(); track g.id; let i = $index) {
+                <tr [class.fuera-de-pagina]="!estaEnPagina(i)">
+                  <td>{{ g.fecha | date: 'dd/MM/yy HH:mm' }}</td>
+                  <td>{{ g.categoria }}</td>
+                  <td>{{ g.descripcion }}</td>
+                  <td>{{ g.monto | currency: 'PYG' : 'symbol-narrow' : '1.0-0' }}</td>
+                  <td>{{ g.metodoPago ? formatearMetodoPago(g.metodoPago) : '' }}</td>
+                  <td>{{ g.usuarioNombreMomento }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="vacio"><app-icon name="credit-card" [size]="18" /> No hay gastos en el período/filtros seleccionados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+
+      <app-paginacion [pagina]="pagina()" [totalPaginas]="totalPaginas()" (anterior)="paginaAnterior()" (siguiente)="paginaSiguiente()" />
+    </div>
+  }
+</div>
